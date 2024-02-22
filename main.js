@@ -1,155 +1,114 @@
-document.addEventListener('DOMContentLoaded', function() {
-  const imageForm = document.getElementById('imageForm');
-  const canvasContainer = document.getElementById('canvas-container');
-  imageForm.addEventListener('submit', function(event) {
-    event.preventDefault();
-    const imageInput = document.getElementById('imageInput');
-    const newWidthInput = document.getElementById('newWidth');
-    const newHeightInput = document.getElementById('newHeight');
-    const file = imageInput.files[0];
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = newWidthInput.value;
-        canvas.height = newHeightInput.value;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const resizedImageData = downsizeImage(imageData, canvas.width, canvas.height);
-        const resizedCanvas = document.createElement('canvas');
-        resizedCanvas.width = canvas.width;
-        resizedCanvas.height = canvas.height;
-        const resizedCtx = resizedCanvas.getContext('2d');
-        resizedCtx.putImageData(resizedImageData, 0, 0);
-        canvasContainer.innerHTML = ''; // Clear previous content
-        canvasContainer.appendChild(resizedCanvas);
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-});
+function downsizeImage(oldImageData, maxDimension) {
+    const oldWidth = oldImageData.width;
+    const oldHeight = oldImageData.height;
+    const newWidth = oldWidth > oldHeight ? maxDimension : maxDimension * oldWidth / oldHeight;
+    const newHeight = oldHeight > oldWidth ? maxDimension : maxDimension * oldHeight / oldWidth;
+    const scaleX = oldWidth / newWidth;
+    const scaleY = oldHeight / newHeight;
+    const newImageData = new ImageData(newWidth, newHeight);
+    const a = Math.sqrt(2);
+    function valueAtXY(x, y) {
+        const a = Math.floor(y);
+        const b = Math.floor(x);
+        if (a < 1 || a >= oldImageData.height - 2 || b < 1 || b >= oldImageData.width - 2) {
+            return [0, 0, 0];
+        }
 
+        const dx = x - b;
+        const dy = y - a;
 
-
-document.addEventListener('DOMContentLoaded', function() {
-  const imageForm = document.getElementById('imageForm');
-  const canvasContainer = document.getElementById('canvas-container');
-
-  imageForm.addEventListener('submit', function(event) {
-    event.preventDefault();
-
-    const imageInput = document.getElementById('imageInput');
-    const newWidthInput = document.getElementById('newWidth');
-    const newHeightInput = document.getElementById('newHeight');
-
-    const file = imageInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function(event) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = newWidthInput.value;
-        canvas.height = newHeightInput.value;
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const resizedImageData = downsizeImage(imageData, canvas.width, canvas.height);
-
-        const resizedCanvas = document.createElement('canvas');
-        resizedCanvas.width = canvas.width;
-        resizedCanvas.height = canvas.height;
-        const resizedCtx = resizedCanvas.getContext('2d');
-        resizedCtx.putImageData(resizedImageData, 0, 0);
-
-        canvasContainer.innerHTML = ''; // Clear previous content
-        canvasContainer.appendChild(resizedCanvas);
-      };
-      img.src = event.target.result;
-    };
-
-    reader.readAsDataURL(file);
-  });
-});
-
-
-
-function downsizeImage(oldImageData, newWidth, newHeight) {
-  const oldWidth = oldImageData.width;
-  const oldHeight = oldImageData.height;
-  const scaleX = oldWidth / newWidth;
-  const scaleY = oldHeight / newHeight;
-  const newImageData = new ImageData(newWidth, newHeight);
-
-  function imageDataTo3DArray(imageData) {
-    const arr = new Array(imageData.height);
-    for (let y = 0; y < imageData.height; y++) {
-      arr[y] = new Array(imageData.width);
-      for (let x = 0; x < imageData.width; x++) {
-        const index = (imageData.width * y + x) * 4;
-        arr[y][x] = [
-          imageData.data[index], // Red
-          imageData.data[index + 1], // Green
-          imageData.data[index + 2], // Blue
+        const weightsX = [
+            cubicWeight(dx + 1),
+            cubicWeight(dx),
+            cubicWeight(1 - dx),
+            cubicWeight(2 - dx)
         ];
-      }
+        const weightsY = [
+            cubicWeight(dy + 1),
+            cubicWeight(dy),
+            cubicWeight(1 - dy),
+            cubicWeight(2 - dy)
+        ];
+
+        let pixel = [0, 0, 0];
+
+        for (let i = -1; i <= 2; i++) {
+            for (let j = -1; j <= 2; j++) {
+                const offsetX = b + j;
+                const offsetY = a + i;
+                const offset = offsetY * oldImageData.width + offsetX;
+                const color = [
+                    oldImageData.data[(offset * 4)],
+                    oldImageData.data[(offset * 4) + 1],
+                    oldImageData.data[(offset * 4) + 2]
+                ];
+
+                const weight = weightsX[j + 1] * weightsY[i + 1];
+
+                pixel[0] += color[0] * weight;
+                pixel[1] += color[1] * weight;
+                pixel[2] += color[2] * weight;
+            }
+        }
+
+        return pixel;
     }
-    return arr;
-  }
 
-  const oldImage3D = imageDataTo3DArray(oldImageData);
-  const newImage3D = [];
-  const a = Math.sqrt(2)
-
-  function oldPixelIterator(x, y) {
-    let r1 = 0, g1 = 0, b1 = 0, r2 = 0, g2 = 0, b2 = 0;
-
-    for (let i = (y * scaleY) * 3 / 2; i >= (y * scaleY); i--) {
-      for (let j = (x * scaleX) * 3 / 2; j >= (x * scaleX); j--) {
-        const weight = Math.cos((1 - Math.hypot(i, j)) / Math.hypot(x * scaleX, y * scaleY));
-        r1 = Math.hypot((oldImage3D[y][x][0] || 0) * weight,r1)/a;
-        g1  = Math.hypot((oldImage3D[y][x][1] || 0) * weight,g1)/a;
-        b1 = Math.hypot((oldImage3D[y][x][2] || 0) * weight,b1)/a;
-      }
-    }
-    for (let i = (y * scaleY) / 2; i <= (y * scaleY); i++) {
-      for (let j = (x * scaleX) / 2; j <= (x * scaleX); j++) {
-        const weight = Math.cos((1 - Math.hypot(i, j)) / Math.hypot(x * scaleX, y * scaleY));
-        r2 = Math.hypot((oldImage3D[y][x][0] || 0) * weight,r2)/a;
-        g2 = Math.hypot((oldImage3D[y][x][1] || 0) * weight,g2)/a;
-        b2 = Math.hypot((oldImage3D[y][x][2] || 0) * weight,b2)/a;
-      }
+    function cubicWeight(t) {
+        // Cubic B-Spline
+        if (t <= 1) {
+            return (t * t * (1.5 * t - 2.5) + 1);
+        } else if (t < 2) {
+            return (t * (-(t * (t * 0.5 - 2.5) - 4) + 2));
+        } else {
+            return 0;
+        }
     }
 
-    return [Math.hypot(r1,r2)*a, Math.hypot(g1,g2)*a, Math.hypot(b1,b2)*a];
-  }
 
-  for (let y = 0; y < newHeight; y++) {
-    newImage3D[y] = [];
-    for (let x = 0; x < newWidth; x++) {
-      newImage3D[y][x] = oldPixelIterator(x, y);
+    function oldPixelIterator(x, y) {
+        let r1 = 0, g1 = 0, b1 = 0, r2 = 0, g2 = 0, b2 = 0;
+        const yScale = y * scaleY;
+        const xScale = x * scaleX;
+        const yScale1 = yScale + scaleY;
+        const xScale1 = xScale +scaleX;
+        const yScale2 = yScale - scaleY;
+        const xScale2 = xScale -scaleX;
+        const hypotXY1 = Math.hypot(x *  xScale1, y * yScale1)||1;
+        const hypotXY2 = Math.hypot(x *  xScale2, y * yScale2)||1;
+        let   [ra,ga,ba] = [0,0,0]
+        let   [rb,gb,bb] = [0,0,0]
+        for (let i = yScale1; i >= yScale; i--) {
+            for (let j = xScale1; j >= xScale; j--) {
+                const weight = Math.cos(Math.PI*0.5*((1 - Math.hypot(i, j)) / hypotXY1));
+           [ra,ga,ba] = valueAtXY(j,i)
+                r1 = Math.hypot((ra||1) * weight, r1)/a;
+                g1 = Math.hypot((ga||1) * weight, g1)/a;
+                b1 = Math.hypot((ba||1) * weight, b1) /a;
+            }
+        }
+        for (let i = yScale2; i <= yScale; i++) {
+            for (let j = xScale2; j <= xScale; j++) {
+                const weight = Math.cos(Math.PI*0.5*((1 - Math.hypot(i, j)) / hypotXY2));
+                [rb,gb,bb] = valueAtXY(j,i)
+                r2 = Math.hypot((rb||1) * weight, r2)/a ;
+                g2 = Math.hypot((gb||1) * weight, g2)/a;
+                b2 = Math.hypot((bb||1) * weight, b2)/a ;
+            }
+        }
+        return [Math.hypot(r1, r2)/a, Math.hypot(g1, g2)/a, Math.hypot(b1, b2)/a];
     }
-  }
 
-  return arrayToImageData(newImage3D, newWidth, newHeight);
-
-  function arrayToImageData(pixelArray, width, height) {
-    const imageData = new ImageData(width, height);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const [r, g, b] = pixelArray[y][x];
-        const index = (y * width + x) * 4;
-        imageData.data[index] = r;
-        imageData.data[index + 1] = g;
-        imageData.data[index + 2] = b;
-        imageData.data[index + 3] = 255;
-      }
+    for (let y = 0; y < newHeight; y++) {
+        for (let x = 0; x < newWidth; x++) {
+            let [r, g, b] = oldPixelIterator(x, y);
+            const pixelIndex = (y * newImageData.width + x) * 4;
+            newImageData.data[pixelIndex] = r;
+            newImageData.data[pixelIndex + 1] = g;
+            newImageData.data[pixelIndex + 2] = b;
+            newImageData.data[pixelIndex + 3] = 255;
+        }
     }
-    return imageData;
-  }
+
+    return newImageData;
 }
