@@ -1,37 +1,37 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const imageForm = document.getElementById('imageForm');
-    const canvasContainer = document.getElementById('canvas-container');
-    imageForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        const imageInput = document.getElementById('imageInput');
-        const newWidthInput = document.getElementById('newWidth');
-        const newHeightInput = document.getElementById('newHeight');
-        const file = imageInput.files[0];
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = newWidthInput.value;
-                canvas.height = newHeightInput.value;
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const resizedImageData = downsizeImage(imageData, canvas.width, canvas.height);
-                const resizedCanvas = document.createElement('canvas');
-                resizedCanvas.width = canvas.width;
-                resizedCanvas.height = canvas.height;
-                const resizedCtx = resizedCanvas.getContext('2d');
-                resizedCtx.putImageData(resizedImageData, 0, 0);
-                canvasContainer.innerHTML = ''; // Clear previous content
-                canvasContainer.appendChild(resizedCanvas);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-});
-
+// document.addEventListener('DOMContentLoaded', function() {
+//     const imageForm = document.getElementById('imageForm');
+//     const canvasContainer = document.getElementById('canvas-container');
+//     imageForm.addEventListener('submit', function(event) {
+//         event.preventDefault();
+//         const imageInput = document.getElementById('imageInput');
+//         const newWidthInput = document.getElementById('newWidth');
+//         const newHeightInput = document.getElementById('newHeight');
+//         const file = imageInput.files[0];
+//         const reader = new FileReader();
+//         reader.onload = function(event) {
+//             const img = new Image();
+//             img.onload = function() {
+//                 const canvas = document.createElement('canvas');
+//                 const ctx = canvas.getContext('2d');
+//                 canvas.width = newWidthInput.value;
+//                 canvas.height = newHeightInput.value;
+//                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+//                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+//                 const resizedImageData = downsizeImage(imageData, canvas.width, canvas.height);
+//                 const resizedCanvas = document.createElement('canvas');
+//                 resizedCanvas.width = canvas.width;
+//                 resizedCanvas.height = canvas.height;
+//                 const resizedCtx = resizedCanvas.getContext('2d');
+//                 resizedCtx.putImageData(resizedImageData, 0, 0);
+//                 canvasContainer.innerHTML = ''; // Clear previous content
+//                 canvasContainer.appendChild(resizedCanvas);
+//             };
+//             img.src = event.target.result;
+//         };
+//         reader.readAsDataURL(file);
+//     });
+// });
+//
 
 
 document.addEventListener('DOMContentLoaded', function() {
