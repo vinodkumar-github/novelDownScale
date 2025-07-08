@@ -1,5 +1,7 @@
 # Novel Image Scaling Algorithm
 Hosted at https://vinodkumar-github.github.io/novelDownScale/
+
+ToDo: Uploaded image infometrics display & Feature to ensure aspect ratio is unchanged even on scaling up or down.
 ## Overview
 A novel approach to image scaling with a primary focus on downscaling (with potential for upscaling through minor modifications). The algorithm utilizes harmonic data interpolation through the built-in Hypot method to achieve high-quality image transformation.
 
