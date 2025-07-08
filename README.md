@@ -2,6 +2,7 @@
 Hosted at https://vinodkumar-github.github.io/novelDownScale/
 
 ToDo: Uploaded image infometrics display & Feature to ensure aspect ratio is unchanged even on scaling up or down.
+      Memoization pending and Workers logic to hasten processing. (Both Simultaneously? Isolate unique values in png cells and run workers on them to create a table -thus pseudo memoization?)
 ## Overview
 A novel approach to image scaling with a primary focus on downscaling (with potential for upscaling through minor modifications). The algorithm utilizes harmonic data interpolation through the built-in Hypot method to achieve high-quality image transformation.
 
