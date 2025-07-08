@@ -13,6 +13,7 @@ A novel approach to image scaling with a primary focus on downscaling (with pote
 
 
 **TODO**
+
 	•	_Image Infometrics Display_
  
                   Add a feature to display infometrics of the uploaded image.
